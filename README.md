@@ -781,7 +781,7 @@ Este proyecto demuestra mis competencias en:
 **Lautaro Ruspil** - Frontend Developer
 
 - 💼 **LinkedIn**: [linkedin.com/in/lautaro-ruspil](https://linkedin.com/in/lautaro-ruspil)
-- 📧 **Email**: lautaroruspil@gmail.com
+- 📧 **Email**: lauruspil@gmail.com
 - 🌐 **Portfolio**: [lautaro-ruspil.dev](https://lautaro-ruspil.dev) _(próximamente)_
 - 💻 **GitHub**: [@lautaro-ruspil](https://github.com/lautaro-ruspil)
 
