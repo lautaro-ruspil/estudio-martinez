@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-white text-slate-800 antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-semibold text-secondary-900;
+    }
+}
+
+@layer components {
+    .container-custom {
+        @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
+
+    .section-spacing {
+        @apply py-16 md:py-24;
+    }
+
+    .section-spacing-lg {
+        @apply py-24 md:py-32;
+    }
+
+    .heading-spacing {
+        @apply mb-12 md:mb-16;
+    }
+}
