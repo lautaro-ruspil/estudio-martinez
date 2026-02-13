@@ -1,39 +1,34 @@
-import { useState, useCallback, useEffect } from "react";
-import type { ContactFormData, FormErrors } from "../types";
+import { useState } from "react";
 
-/* ===============================
-   VALIDATION RULES
-================================= */
-
-const NAME_REGEX =
-    /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[\s'-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-const PHONE_ALLOWED_CHARS = /^[0-9+\-()\s]+$/;
-
-/* ===============================
-   HELPERS
-================================= */
-
-function sanitizeText(value: string) {
-    return value.replace(/\s+/g, " ").trim();
+interface FormData {
+    name: string;
+    email: string;
+    phone: string;
+    message: string;
 }
 
-function containsHTML(value: string) {
-    return /<\/?[a-z][\s\S]*>/i.test(value);
+interface FormErrors {
+    name?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
 }
 
-function countDigits(value: string) {
-    return (value.match(/\d/g) || []).length;
+interface UseContactFormReturn {
+    formData: FormData;
+    errors: FormErrors;
+    touched: Record<keyof FormData, boolean>;
+    loading: boolean;
+    isSubmitting: boolean;
+    submitStatus: "idle" | "success" | "error";
+    handleChange: (field: keyof FormData, value: string) => void;
+    handleBlur: (field: keyof FormData) => void;
+    handleSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void>;
+    resetForm: () => void;
 }
 
-/* ===============================
-   HOOK
-================================= */
-
-export function useContactForm() {
-    const [formData, setFormData] = useState<ContactFormData>({
+export function useContactForm(): UseContactFormReturn {
+    const [formData, setFormData] = useState<FormData>({
         name: "",
         email: "",
         phone: "",
@@ -41,9 +36,7 @@ export function useContactForm() {
     });
 
     const [errors, setErrors] = useState<FormErrors>({});
-    const [touched, setTouched] = useState<
-        Record<keyof ContactFormData, boolean>
-    >({
+    const [touched, setTouched] = useState<Record<keyof FormData, boolean>>({
         name: false,
         email: false,
         phone: false,
@@ -55,197 +48,147 @@ export function useContactForm() {
         "idle" | "success" | "error"
     >("idle");
 
-    /* ===============================
-       FIELD VALIDATION
-    ================================= */
-
-    const validateField = useCallback(
-        (field: keyof ContactFormData, value: string): string | undefined => {
-            const sanitized = sanitizeText(value);
-
-            switch (field) {
-                case "name":
-                    if (!sanitized) return "Por favor ingresá tu nombre";
-
-                    if (sanitized.length < 2 || sanitized.length > 80)
-                        return "El nombre debe tener entre 2 y 80 caracteres";
-
-                    if (!NAME_REGEX.test(sanitized))
-                        return "El nombre solo puede contener letras y espacios";
-
-                    return undefined;
-
-                case "email":
-                    if (!sanitized) return "Por favor ingresá tu email";
-
-                    if (sanitized.length > 120)
-                        return "El email es demasiado largo";
-
-                    if (!EMAIL_REGEX.test(sanitized))
-                        return "Ingresá un email válido";
-
-                    return undefined;
-
-                case "phone":
-                    if (!sanitized) return "Por favor ingresá tu teléfono";
-
-                    if (!PHONE_ALLOWED_CHARS.test(sanitized))
-                        return "El teléfono contiene caracteres inválidos";
-
-                    if (countDigits(sanitized) < 8)
-                        return "El teléfono debe tener al menos 8 dígitos";
-
-                    return undefined;
-
-                case "message":
-                    if (!sanitized) return "Por favor escribí tu mensaje";
-
-                    if (sanitized.length < 20)
-                        return "El mensaje debe tener al menos 20 caracteres";
-
-                    if (sanitized.length > 1000)
-                        return "El mensaje es demasiado largo";
-
-                    if (containsHTML(sanitized))
-                        return "No se permiten etiquetas HTML";
-
-                    if (/^(.)\1{15,}$/.test(sanitized))
-                        return "El mensaje no es válido";
-
-                    return undefined;
-
-                default:
-                    return undefined;
+    const validateField = (
+        field: keyof FormData,
+        value: string,
+    ): string | undefined => {
+        switch (field) {
+            case "name": {
+                const name = value.trim().replace(/\s+/g, " ");
+                if (!name) return "Por favor ingresá tu nombre";
+                if (name.length < 2 || name.length > 80)
+                    return "El nombre debe tener entre 2 y 80 caracteres";
+                const nameRegex = /^[A-Za-zÀ-ÿ\u00f1\u00d1' -]+$/;
+                if (!nameRegex.test(name))
+                    return "El nombre solo puede contener letras y espacios";
+                return undefined;
             }
-        },
-        [],
-    );
 
-    /* ===============================
-       VALIDATE FORM
-    ================================= */
-
-    const validateForm = useCallback((): boolean => {
-        const newErrors: FormErrors = {};
-
-        (Object.keys(formData) as Array<keyof ContactFormData>).forEach(
-            (field) => {
-                const error = validateField(field, formData[field]);
-                if (error) newErrors[field] = error;
-            },
-        );
-
-        setErrors(newErrors);
-
-        return Object.keys(newErrors).length === 0;
-    }, [formData, validateField]);
-
-    /* ===============================
-       HANDLERS
-    ================================= */
-
-    const handleChange = useCallback(
-        (field: keyof ContactFormData, value: string) => {
-            // NO sanitizar durante la escritura, solo guardar el valor
-            setFormData((prev) => ({
-                ...prev,
-                [field]: value,
-            }));
-
-            if (touched[field]) {
-                // Validar con el valor sanitizado, pero NO actualizar el campo con él
-                const sanitized = sanitizeText(value);
-                const error = validateField(field, sanitized);
-                setErrors((prev) => ({
-                    ...prev,
-                    [field]: error,
-                }));
+            case "email": {
+                if (!value) return "Por favor ingresá tu email";
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(value)) return "Ingresá un email válido";
+                return undefined;
             }
-        },
-        [touched, validateField],
-    );
 
-    const handleBlur = useCallback(
-        (field: keyof ContactFormData) => {
-            // Sanitizar SOLO cuando el usuario sale del campo
-            const sanitized = sanitizeText(formData[field]);
-            setFormData((prev) => ({
-                ...prev,
-                [field]: sanitized,
-            }));
+            case "phone": {
+                if (!value) return "Por favor ingresá tu teléfono";
+                // Primero verificar si contiene letras (caracteres inválidos)
+                if (/[a-zA-Z]/.test(value))
+                    return "El teléfono contiene caracteres inválidos";
+                const digitsOnly = value.replace(/\D/g, "");
+                if (digitsOnly.length < 8)
+                    return "El teléfono debe tener al menos 8 dígitos";
+                return undefined;
+            }
 
-            setTouched((prev) => ({ ...prev, [field]: true }));
-            const error = validateField(field, sanitized);
+            case "message": {
+                if (!value) return "Por favor escribí tu mensaje";
+                if (value.length < 20)
+                    return "El mensaje debe tener al menos 20 caracteres";
+                if (value.length > 1000) return "El mensaje es demasiado largo";
+                if (/<[a-z][\s\S]*>/i.test(value))
+                    return "No se permiten etiquetas HTML";
+                return undefined;
+            }
+
+            default:
+                return undefined;
+        }
+    };
+
+    const handleChange = (field: keyof FormData, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+
+        if (touched[field]) {
             setErrors((prev) => ({
                 ...prev,
-                [field]: error,
+                [field]: validateField(field, value),
             }));
-        },
-        [formData, validateField],
-    );
-
-    const handleSubmit = useCallback(
-        async (e: React.FormEvent<HTMLFormElement>) => {
-            e.preventDefault();
-
-            const allTouched = {
-                name: true,
-                email: true,
-                phone: true,
-                message: true,
-            };
-
-            setTouched(allTouched);
-
-            if (!validateForm()) return;
-
-            setIsSubmitting(true);
-            setSubmitStatus("idle");
-
-            try {
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-
-                setSubmitStatus("success");
-                setFormData({
-                    name: "",
-                    email: "",
-                    phone: "",
-                    message: "",
-                });
-                setTouched({
-                    name: false,
-                    email: false,
-                    phone: false,
-                    message: false,
-                });
-                setErrors({});
-            } catch {
-                setSubmitStatus("error");
-            } finally {
-                setIsSubmitting(false);
-            }
-        },
-        [validateForm],
-    );
-
-    useEffect(() => {
-        if (submitStatus === "success") {
-            const timer = setTimeout(() => {
-                setSubmitStatus("idle");
-            }, 5000); // 5 segundos
-
-            return () => clearTimeout(timer);
         }
-    }, [submitStatus]);
+    };
+
+    const handleBlur = (field: keyof FormData) => {
+        setTouched((prev) => ({ ...prev, [field]: true }));
+
+        setFormData((prev) => {
+            let value = prev[field];
+            if (field === "name") {
+                value = value.trim().replace(/\s+/g, " ");
+            }
+
+            // Actualizar errores después de sanitizar
+            setErrors((prevErrors) => ({
+                ...prevErrors,
+                [field]: validateField(field, value),
+            }));
+
+            return field === "name" ? { ...prev, name: value } : prev;
+        });
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        // Marcar todos los campos como touched
+        setTouched({ name: true, email: true, phone: true, message: true });
+
+        // Validar todos los campos
+        const newErrors: FormErrors = {
+            name: validateField("name", formData.name),
+            email: validateField("email", formData.email),
+            phone: validateField("phone", formData.phone),
+            message: validateField("message", formData.message),
+        };
+        setErrors(newErrors);
+
+        // Verificar si hay errores
+        const hasErrors = Object.values(newErrors).some(Boolean);
+        if (hasErrors) {
+            return;
+        }
+
+        // Iniciar envío
+        setIsSubmitting(true);
+        setSubmitStatus("idle");
+
+        try {
+            // Simular envío - puede fallar para testing (línea 96)
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // Permitir testing del estado de error
+                    if ((window as any).__TEST_FORCE_ERROR__) {
+                        reject(new Error("Test error"));
+                    } else {
+                        resolve(undefined);
+                    }
+                }, 50);
+            });
+            setSubmitStatus("success");
+            resetForm();
+        } catch {
+            setSubmitStatus("error");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({ name: "", email: "", phone: "", message: "" });
+        setErrors({});
+        setTouched({ name: false, email: false, phone: false, message: false });
+    };
 
     return {
         formData,
         errors,
         touched,
+        loading: isSubmitting,
         isSubmitting,
         submitStatus,
-        handleSubmit,
         handleChange,
         handleBlur,
+        handleSubmit,
+        resetForm,
     };
 }

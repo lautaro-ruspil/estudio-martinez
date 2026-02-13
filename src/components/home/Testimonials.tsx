@@ -40,7 +40,7 @@ export function Testimonials() {
 
                                     <blockquote className="relative z-10 mb-8">
                                         <p className="text-slate-700 leading-relaxed">
-                                            “{testimonial.content}”
+                                            "{testimonial.content}"
                                         </p>
                                     </blockquote>
 

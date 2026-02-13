@@ -41,15 +41,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         },
         ref,
     ) => {
+        const isDisabled = disabled || isLoading;
+
         const baseStyles =
-            "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+            "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 ease-in-out hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2";
+
+        const disabledStyles = isDisabled
+            ? "opacity-50 cursor-not-allowed"
+            : "";
 
         return (
             <button
                 ref={ref}
                 type={type}
-                disabled={disabled || isLoading}
-                className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+                disabled={isDisabled}
+                className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${disabledStyles} ${className}`}
                 aria-busy={isLoading}
                 {...props}
             >

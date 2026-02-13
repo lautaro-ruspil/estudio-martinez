@@ -100,7 +100,7 @@ export function Navbar() {
                             <Button
                                 variant="primary"
                                 size="sm"
-                                onClick={() => scrollToSection("contacto")}
+                                onClick={() => handleNavClick("contacto")}
                             >
                                 Contacto
                             </Button>

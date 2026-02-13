@@ -9,7 +9,13 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, isValid, id, className = "", ...props }, ref) => {
+    (
+        { label, error, isValid, helpText, id, className = "", ...props },
+        ref,
+    ) => {
+        const helpId = `${id}-help`;
+        const errorId = `${id}-error`;
+
         return (
             <div className="space-y-2">
                 <label
@@ -37,7 +43,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${className}
             `}
                         aria-invalid={!!error}
-                        aria-describedby={error ? `${id}-error` : undefined}
+                        aria-describedby={
+                            error ? errorId : helpText ? helpId : undefined
+                        }
                         {...props}
                     />
 
@@ -52,12 +60,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
                 {error && (
                     <p
-                        id={`${id}-error`}
+                        id={errorId}
                         className="text-sm text-red-600 flex items-center gap-1"
                         role="alert"
                     >
                         <AlertCircle className="w-4 h-4" />
                         {error}
+                    </p>
+                )}
+
+                {!error && helpText && (
+                    <p id={helpId} className="text-sm text-slate-500">
+                        {helpText}
                     </p>
                 )}
             </div>

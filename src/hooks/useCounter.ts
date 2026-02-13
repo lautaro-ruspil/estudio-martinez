@@ -6,60 +6,86 @@ interface UseCounterOptions {
 }
 
 export function useCounter({ end, duration = 1500 }: UseCounterOptions) {
-    const [count, setCount] = useState(0);
-    const [hasStarted, setHasStarted] = useState(false);
+    const [count, setCount] = useState<number>(0);
     const ref = useRef<HTMLDivElement | null>(null);
 
-    useEffect(() => {
-        const node = ref.current;
-        if (!node) return;
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const rafRef = useRef<number | null>(null);
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setHasStarted(true);
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.4 },
-        );
-
-        observer.observe(node);
-        return () => observer.disconnect();
-    }, []);
+    const hasAnimatedRef = useRef(false);
+    const startTimeRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (!hasStarted) return;
+        const element = ref.current;
 
-        // Accesibilidad
-        const prefersReducedMotion = window.matchMedia(
-            "(prefers-reduced-motion: reduce)",
-        ).matches;
+        if (!element) return;
+        if (hasAnimatedRef.current) return;
 
-        if (prefersReducedMotion) {
-            setCount(end);
-            return;
-        }
+        const finalValue = Math.floor(end);
 
-        let startTimestamp: number | null = null;
+        const prefersReducedMotion =
+            window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ??
+            false;
 
-        const step = (timestamp: number) => {
-            if (!startTimestamp) startTimestamp = timestamp;
+        const handleIntersection: IntersectionObserverCallback = (entries) => {
+            const entry = entries[0];
 
-            const progress = timestamp - startTimestamp;
-            const progressRatio = Math.min(progress / duration, 1);
+            if (!entry?.isIntersecting) return;
+            if (hasAnimatedRef.current) return;
 
-            setCount(Math.floor(progressRatio * end));
+            hasAnimatedRef.current = true;
 
-            if (progress < duration) {
-                requestAnimationFrame(step);
-            } else {
-                setCount(end);
+            // 🔥 CAMBIO CLAVE: Desconectar inmediatamente después de detectar visibilidad
+            if (observerRef.current) {
+                observerRef.current.disconnect();
             }
+
+            // Reduced motion o end = 0 → valor inmediato
+            if (prefersReducedMotion || finalValue === 0) {
+                setCount(finalValue);
+                return;
+            }
+
+            const animate = (time: number) => {
+                if (startTimeRef.current === null) {
+                    startTimeRef.current = 0;
+                }
+
+                const elapsed = time - startTimeRef.current;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const value = Math.floor(progress * finalValue);
+                setCount(value);
+
+                if (progress < 1) {
+                    rafRef.current = requestAnimationFrame(animate);
+                } else {
+                    setCount(finalValue); // garantiza valor exacto
+                }
+            };
+
+            rafRef.current = requestAnimationFrame(animate);
         };
 
-        requestAnimationFrame(step);
-    }, [hasStarted, end, duration]);
+        const ObserverConstructor = globalThis.IntersectionObserver as any;
+        observerRef.current = new ObserverConstructor(handleIntersection);
+
+        if (observerRef.current) {
+            observerRef.current.observe(element);
+        }
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+            observerRef.current = null;
+
+            if (rafRef.current !== null) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+        };
+    }, [end, duration, ref.current]);
 
     return { count, ref };
 }

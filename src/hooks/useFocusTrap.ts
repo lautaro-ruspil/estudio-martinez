@@ -6,22 +6,33 @@ import { useEffect, useRef } from "react";
  */
 export function useFocusTrap(isActive: boolean) {
     const elementRef = useRef<HTMLDivElement>(null);
+    const previousElementRef = useRef<HTMLDivElement | null>(null);
+    const previousIsActiveRef = useRef<boolean>(false);
 
     useEffect(() => {
-        if (!isActive) return;
-
         const element = elementRef.current;
-        if (!element) return;
+
+        // Only setup if isActive changed or element changed
+        const elementChanged = element !== previousElementRef.current;
+        const isActiveChanged = isActive !== previousIsActiveRef.current;
+
+        previousElementRef.current = element;
+        previousIsActiveRef.current = isActive;
+
+        if (!isActive || !element) return;
+        if (!elementChanged && !isActiveChanged) return;
 
         const focusableElements = element.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])',
         );
 
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
         // Focus first element on open
-        firstElement?.focus();
+        if (firstElement) {
+            firstElement.focus();
+        }
 
         const handleTabKey = (e: KeyboardEvent) => {
             if (e.key !== "Tab") return;
@@ -46,7 +57,7 @@ export function useFocusTrap(isActive: boolean) {
         return () => {
             document.removeEventListener("keydown", handleTabKey);
         };
-    }, [isActive]);
+    });
 
     return elementRef;
 }
