@@ -5,6 +5,7 @@ import { useScrollToSection } from "./useScrollToSection";
 describe("useScrollToSection", () => {
     let scrollToMock: any;
     let getElementByIdMock: any;
+    let querySelectorMock: any;
 
     beforeEach(() => {
         // Mock window.scrollTo
@@ -13,10 +14,30 @@ describe("useScrollToSection", () => {
 
         // Mock document.getElementById
         getElementByIdMock = vi.spyOn(document, "getElementById");
+
+        // Mock document.querySelector para navbar
+        querySelectorMock = vi.spyOn(document, "querySelector");
+        const mockNavbar = { offsetHeight: 80 } as HTMLElement;
+        querySelectorMock.mockReturnValue(mockNavbar);
+
+        // Mock window.innerWidth (desktop por defecto)
+        Object.defineProperty(window, "innerWidth", {
+            writable: true,
+            configurable: true,
+            value: 1024,
+        });
+
+        // Mock document.documentElement.classList
+        document.documentElement.classList.add = vi.fn();
+        document.documentElement.classList.remove = vi.fn();
+
+        // Mock setTimeout
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.useRealTimers();
     });
 
     describe("Funcionalidad básica", () => {
@@ -39,8 +60,9 @@ describe("useScrollToSection", () => {
             result.current("about");
 
             expect(getElementByIdMock).toHaveBeenCalledWith("about");
+            // 500 + 100 - 80 (navbar) - 8 (extraPadding desktop) = 512
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 520, // 500 (position) + 100 (scrollY) - 80 (navbar)
+                top: 512,
                 behavior: "smooth",
             });
         });
@@ -73,7 +95,10 @@ describe("useScrollToSection", () => {
     });
 
     describe("Offset del navbar", () => {
-        it("aplica offset de 80px para el navbar fijo", () => {
+        it("aplica offset dinámico del navbar", () => {
+            const mockNavbar = { offsetHeight: 80 } as HTMLElement;
+            querySelectorMock.mockReturnValue(mockNavbar);
+
             const mockElement = {
                 getBoundingClientRect: () => ({ top: 1000 }),
             } as HTMLElement;
@@ -85,8 +110,9 @@ describe("useScrollToSection", () => {
 
             result.current("contact");
 
+            // 1000 - 80 (navbar) - 8 (extraPadding desktop) = 912
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 920, // 1000 - 80
+                top: 912,
                 behavior: "smooth",
             });
         });
@@ -103,8 +129,9 @@ describe("useScrollToSection", () => {
 
             result.current("section");
 
+            // 200 + 500 - 80 - 8 = 612
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 620, // 200 + 500 - 80
+                top: 612,
                 behavior: "smooth",
             });
         });
@@ -121,8 +148,30 @@ describe("useScrollToSection", () => {
 
             result.current("top-section");
 
+            // 50 - 80 - 8 = -38
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: -30, // 50 - 80 (puede ser negativo si está muy arriba)
+                top: -38,
+                behavior: "smooth",
+            });
+        });
+
+        it("usa fallback de 80px si navbar no existe", () => {
+            querySelectorMock.mockReturnValue(null);
+
+            const mockElement = {
+                getBoundingClientRect: () => ({ top: 1000 }),
+            } as HTMLElement;
+
+            getElementByIdMock.mockReturnValue(mockElement);
+            window.scrollY = 0;
+
+            const { result } = renderHook(() => useScrollToSection());
+
+            result.current("section");
+
+            // 1000 - 80 (fallback) - 8 = 912
+            expect(scrollToMock).toHaveBeenCalledWith({
+                top: 912,
                 behavior: "smooth",
             });
         });
@@ -162,6 +211,110 @@ describe("useScrollToSection", () => {
 
             expect(scrollToMock).toHaveBeenCalledTimes(1);
         });
+
+        it("agrega clase smooth-scroll temporalmente", () => {
+            const mockElement = {
+                getBoundingClientRect: () => ({ top: 300 }),
+            } as HTMLElement;
+
+            getElementByIdMock.mockReturnValue(mockElement);
+            window.scrollY = 0;
+
+            const { result } = renderHook(() => useScrollToSection());
+
+            result.current("section");
+
+            expect(document.documentElement.classList.add).toHaveBeenCalledWith(
+                "smooth-scroll",
+            );
+
+            // Avanzar timers
+            vi.advanceTimersByTime(1000);
+
+            expect(
+                document.documentElement.classList.remove,
+            ).toHaveBeenCalledWith("smooth-scroll");
+        });
+    });
+
+    describe("Padding extra responsive", () => {
+        it("aplica 16px de padding extra en mobile", () => {
+            // Simular mobile
+            Object.defineProperty(window, "innerWidth", {
+                writable: true,
+                configurable: true,
+                value: 375,
+            });
+
+            const mockElement = {
+                getBoundingClientRect: () => ({ top: 500 }),
+            } as HTMLElement;
+
+            getElementByIdMock.mockReturnValue(mockElement);
+            window.scrollY = 0;
+
+            const { result } = renderHook(() => useScrollToSection());
+
+            result.current("section");
+
+            // 500 - 80 - 16 (mobile padding) = 404
+            expect(scrollToMock).toHaveBeenCalledWith({
+                top: 404,
+                behavior: "smooth",
+            });
+        });
+
+        it("aplica 8px de padding extra en desktop", () => {
+            // Simular desktop
+            Object.defineProperty(window, "innerWidth", {
+                writable: true,
+                configurable: true,
+                value: 1440,
+            });
+
+            const mockElement = {
+                getBoundingClientRect: () => ({ top: 500 }),
+            } as HTMLElement;
+
+            getElementByIdMock.mockReturnValue(mockElement);
+            window.scrollY = 0;
+
+            const { result } = renderHook(() => useScrollToSection());
+
+            result.current("section");
+
+            // 500 - 80 - 8 (desktop padding) = 412
+            expect(scrollToMock).toHaveBeenCalledWith({
+                top: 412,
+                behavior: "smooth",
+            });
+        });
+
+        it("considera 768px como breakpoint mobile/desktop", () => {
+            // Justo en el breakpoint (767px = mobile)
+            Object.defineProperty(window, "innerWidth", {
+                writable: true,
+                configurable: true,
+                value: 767,
+            });
+
+            const mockElement = {
+                getBoundingClientRect: () => ({ top: 500 }),
+            } as HTMLElement;
+
+            getElementByIdMock.mockReturnValue(mockElement);
+            window.scrollY = 0;
+
+            const { result } = renderHook(() => useScrollToSection());
+
+            result.current("section");
+
+            // 767px < 768, entonces mobile: 500 - 80 - 16 = 404
+            expect(scrollToMock).toHaveBeenCalledWith({
+                top: 404,
+                behavior: "smooth",
+            });
+        });
     });
 
     describe("Múltiples llamadas", () => {
@@ -184,8 +337,9 @@ describe("useScrollToSection", () => {
 
             result.current("section1");
 
+            // 300 - 80 - 8 = 212
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 220, // 300 - 80
+                top: 212,
                 behavior: "smooth",
             });
 
@@ -193,8 +347,9 @@ describe("useScrollToSection", () => {
 
             result.current("section2");
 
+            // 800 - 80 - 8 = 712
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 720, // 800 - 80
+                top: 712,
                 behavior: "smooth",
             });
         });
@@ -275,8 +430,9 @@ describe("useScrollToSection", () => {
 
             result.current("section");
 
+            // 100 + 10000 - 80 - 8 = 10012
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 10020, // 100 + 10000 - 80
+                top: 10012,
                 behavior: "smooth",
             });
         });
@@ -293,8 +449,9 @@ describe("useScrollToSection", () => {
 
             result.current("section");
 
+            // -100 + 500 - 80 - 8 = 312
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 320, // -100 + 500 - 80
+                top: 312,
                 behavior: "smooth",
             });
         });
@@ -341,11 +498,6 @@ describe("useScrollToSection", () => {
 
             const scrollToSection = result.current;
 
-            // En un componente real, esto se usaría así:
-            // useEffect(() => {
-            //   scrollToSection('about');
-            // }, [scrollToSection]);
-
             expect(typeof scrollToSection).toBe("function");
         });
     });
@@ -382,8 +534,9 @@ describe("useScrollToSection", () => {
 
             result.current("hero");
 
+            // 0 + 2000 - 80 - 8 = 1912
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 1920, // 0 + 2000 - 80
+                top: 1912,
                 behavior: "smooth",
             });
         });
@@ -400,20 +553,27 @@ describe("useScrollToSection", () => {
 
             const { result } = renderHook(() => useScrollToSection());
 
-            // Simular click en botón que llama a scrollToSection
             const handleNavClick = (sectionId: string) => {
                 result.current(sectionId);
             };
 
             handleNavClick("about");
 
+            // 1200 - 80 - 8 = 1112
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 1120,
+                top: 1112,
                 behavior: "smooth",
             });
         });
 
         it("simula navegación por menú móvil", () => {
+            // Simular mobile
+            Object.defineProperty(window, "innerWidth", {
+                writable: true,
+                configurable: true,
+                value: 375,
+            });
+
             const mockElement = {
                 getBoundingClientRect: () => ({ top: 800 }),
             } as HTMLElement;
@@ -423,9 +583,7 @@ describe("useScrollToSection", () => {
 
             const { result } = renderHook(() => useScrollToSection());
 
-            // Simular cierre de menú y scroll
             const handleMobileMenuClick = (sectionId: string) => {
-                // setMenuOpen(false) - en componente real
                 result.current(sectionId);
             };
 
@@ -446,8 +604,9 @@ describe("useScrollToSection", () => {
 
             result.current("hero");
 
+            // -3000 + 5000 - 80 - 8 = 1912
             expect(scrollToMock).toHaveBeenCalledWith({
-                top: 1920, // -3000 + 5000 - 80
+                top: 1912,
                 behavior: "smooth",
             });
         });
@@ -464,7 +623,6 @@ describe("useScrollToSection", () => {
                 refs.push(result.current);
             }
 
-            // Todas las referencias deben ser iguales
             const allSame = refs.every((ref) => ref === refs[0]);
             expect(allSame).toBe(true);
         });

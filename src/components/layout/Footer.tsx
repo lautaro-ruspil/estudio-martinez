@@ -100,6 +100,17 @@ export function Footer() {
                         © {new Date().getFullYear()} {BUSINESS_INFO.legalName}.
                         Todos los derechos reservados.
                     </p>
+                    <p className="mt-2">
+                        Desarrollado por{" "}
+                        <a
+                            href="https://lautaro-ruspil.web.app"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-primary-400 transition-colors hover:underline underline-offset-2"
+                        >
+                            Lautaro Ruspil
+                        </a>
+                    </p>
                 </div>
             </div>
         </footer>

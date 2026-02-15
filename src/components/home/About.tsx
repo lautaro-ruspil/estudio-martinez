@@ -22,8 +22,10 @@ export function About() {
                                 alt={`${BUSINESS_INFO.owner}, ${BUSINESS_INFO.title}`}
                                 className="w-52 h-52 rounded-full mx-auto mb-6 object-cover border-4 border-white shadow-md"
                                 loading="lazy"
+                                decoding="async"
                                 width="208"
                                 height="208"
+                                sizes="(max-width: 640px) 160px, 208px"
                             />
 
                             <h3 className="text-xl font-semibold text-slate-900">

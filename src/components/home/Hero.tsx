@@ -3,23 +3,24 @@ import { useScrollToSection } from "../../hooks/useScrollToSection";
 import { Button } from "../ui";
 import { BUSINESS_INFO } from "../../config/site";
 import { WhatsAppIcon } from "../ui/WhatsAppIcon";
+import { ICON_SIZES } from "../../constants/iconSizes";
 
 export function Hero() {
     const scrollToSection = useScrollToSection();
 
     return (
         <section
-            className="relative bg-gradient-to-br from-white via-slate-50 to-primary-50"
+            className="relative bg-gradient-to-br from-slate-50 to-white overflow-hidden"
             aria-labelledby="hero-heading"
         >
-            <div className="container-custom min-h-[calc(100svh-80px)] flex items-center">
+            <div className="container-custom min-h-[500px] md:min-h-[600px] lg:min-h-[calc(100svh-80px)] flex items-center py-12 md:py-16">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center w-full">
                     {/* LEFT CONTENT */}
                     <div className="space-y-8">
                         {/* Badge */}
                         <div className="inline-flex items-center gap-2 bg-secondary-50 text-secondary-700 px-4 py-2 rounded-full text-body-sm font-medium border border-secondary-200">
                             <CheckCircle
-                                className="w-4 h-4"
+                                className={ICON_SIZES.xs}
                                 aria-hidden="true"
                             />
                             <span>
@@ -50,7 +51,7 @@ export function Hero() {
                                 variant="outline"
                                 size="lg"
                                 onClick={() => scrollToSection("contacto")}
-                                className="shadow-md hover:shadow-lg transition-all"
+                                className="bg-white text-secondary-700 border border-secondary-700 shadow-md hover:shadow-lg hover:bg-secondary-700 hover:text-white hover:border-transparent transition-all"
                             >
                                 Consultá sin cargo
                             </Button>
@@ -68,7 +69,7 @@ export function Hero() {
                                     className="w-full"
                                 >
                                     <WhatsAppIcon
-                                        className="w-5 h-5"
+                                        className={ICON_SIZES.sm}
                                         aria-hidden="true"
                                     />
                                     WhatsApp
@@ -82,19 +83,23 @@ export function Hero() {
                         <div className="bg-white/95 backdrop-blur-sm p-10 rounded-2xl shadow-medium border border-slate-200/70">
                             <div className="space-y-8">
                                 <InfoItem
-                                    icon={<MapPin className="w-5 h-5" />}
+                                    icon={<MapPin className={ICON_SIZES.sm} />}
                                     title="Ubicación céntrica"
                                     text={`${BUSINESS_INFO.address.street}, ${BUSINESS_INFO.address.city}`}
                                 />
 
                                 <InfoItem
-                                    icon={<Clock className="w-5 h-5" />}
+                                    icon={<Clock className={ICON_SIZES.sm} />}
                                     title="Horarios flexibles"
                                     text={`Lun–Vie ${BUSINESS_INFO.schedule.weekdays}`}
                                 />
 
                                 <InfoItem
-                                    icon={<MessageCircle className="w-5 h-5" />}
+                                    icon={
+                                        <MessageCircle
+                                            className={ICON_SIZES.sm}
+                                        />
+                                    }
                                     title="Atención personalizada"
                                     text="Consultas claras y acompañamiento profesional."
                                 />

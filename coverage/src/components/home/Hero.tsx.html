@@ -196,7 +196,13 @@
 <a name='L131'></a><a href='#L131'>131</a>
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
-<a name='L134'></a><a href='#L134'>134</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -314,6 +320,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">27x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -334,23 +344,24 @@ import { useScrollToSection } from "../../hooks/useScrollToSection";
 import { Button } from "../ui";
 import { BUSINESS_INFO } from "../../config/site";
 import { WhatsAppIcon } from "../ui/WhatsAppIcon";
+import { ICON_SIZES } from "../../constants/iconSizes";
 &nbsp;
 export function Hero() {
     const scrollToSection = useScrollToSection();
 &nbsp;
     return (
         &lt;section
-            className="relative bg-gradient-to-br from-white via-slate-50 to-primary-50"
+            className="relative bg-gradient-to-br from-slate-50 to-white overflow-hidden"
             aria-labelledby="hero-heading"
         &gt;
-            &lt;div className="container-custom min-h-[calc(100svh-80px)] flex items-center"&gt;
+            &lt;div className="container-custom min-h-[500px] md:min-h-[600px] lg:min-h-[calc(100svh-80px)] flex items-center py-12 md:py-16"&gt;
                 &lt;div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center w-full"&gt;
                     {/* LEFT CONTENT */}
                     &lt;div className="space-y-8"&gt;
                         {/* Badge */}
                         &lt;div className="inline-flex items-center gap-2 bg-secondary-50 text-secondary-700 px-4 py-2 rounded-full text-body-sm font-medium border border-secondary-200"&gt;
                             &lt;CheckCircle
-                                className="w-4 h-4"
+                                className={ICON_SIZES.xs}
                                 aria-hidden="true"
                             /&gt;
                             &lt;span&gt;
@@ -381,7 +392,7 @@ export function Hero() {
                                 variant="outline"
                                 size="lg"
                                 onClick={() =&gt; scrollToSection("contacto")}
-                                className="shadow-md hover:shadow-lg transition-all"
+                                className="bg-white text-secondary-700 border border-secondary-700 shadow-md hover:shadow-lg hover:bg-secondary-700 hover:text-white hover:border-transparent transition-all"
                             &gt;
                                 Consultá sin cargo
                             &lt;/Button&gt;
@@ -399,7 +410,7 @@ export function Hero() {
                                     className="w-full"
                                 &gt;
                                     &lt;WhatsAppIcon
-                                        className="w-5 h-5"
+                                        className={ICON_SIZES.sm}
                                         aria-hidden="true"
                                     /&gt;
                                     WhatsApp
@@ -413,19 +424,23 @@ export function Hero() {
                         &lt;div className="bg-white/95 backdrop-blur-sm p-10 rounded-2xl shadow-medium border border-slate-200/70"&gt;
                             &lt;div className="space-y-8"&gt;
                                 &lt;InfoItem
-                                    icon={&lt;MapPin className="w-5 h-5" /&gt;}
+                                    icon={&lt;MapPin className={ICON_SIZES.sm} /&gt;}
                                     title="Ubicación céntrica"
                                     text={`${BUSINESS_INFO.address.street}, ${BUSINESS_INFO.address.city}`}
                                 /&gt;
 &nbsp;
                                 &lt;InfoItem
-                                    icon={&lt;Clock className="w-5 h-5" /&gt;}
+                                    icon={&lt;Clock className={ICON_SIZES.sm} /&gt;}
                                     title="Horarios flexibles"
                                     text={`Lun–Vie ${BUSINESS_INFO.schedule.weekdays}`}
                                 /&gt;
 &nbsp;
                                 &lt;InfoItem
-                                    icon={&lt;MessageCircle className="w-5 h-5" /&gt;}
+                                    icon={
+                                        &lt;MessageCircle
+                                            className={ICON_SIZES.sm}
+                                        /&gt;
+                                    }
                                     title="Atención personalizada"
                                     text="Consultas claras y acompañamiento profesional."
                                 /&gt;
@@ -469,7 +484,7 @@ function InfoItem({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-13T06:58:31.415Z
+                at 2026-02-15T13:01:11.923Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

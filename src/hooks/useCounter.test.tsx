@@ -4,36 +4,45 @@ import { useCounter } from "./useCounter";
 import { act } from "react";
 
 describe("useCounter", () => {
-    let mockObserve: any;
-    let mockDisconnect: any;
-    let intersectionCallback: any;
-    let rafCallbacks: Array<(time: number) => void>;
+    let mockObserve: ReturnType<typeof vi.fn>;
+    let mockDisconnect: ReturnType<typeof vi.fn>;
+    let intersectionCallback: IntersectionObserverCallback | null;
+    let mockObserverInstance: IntersectionObserver | null;
+    let rafCallbacks: Array<FrameRequestCallback>;
+    let performanceNowMock: ReturnType<typeof vi.spyOn>;
+    let currentTime: number;
 
     beforeEach(() => {
         rafCallbacks = [];
         intersectionCallback = null;
+        mockObserverInstance = null;
         mockObserve = vi.fn();
         mockDisconnect = vi.fn();
+        currentTime = 0;
 
-        // Mock IntersectionObserver - DEBE SER UNA CLASE
+        performanceNowMock = vi
+            .spyOn(performance, "now")
+            .mockImplementation(() => currentTime);
+
         (globalThis as any).IntersectionObserver = class IntersectionObserver {
-            constructor(callback: any) {
+            constructor(callback: IntersectionObserverCallback) {
                 intersectionCallback = callback;
+                mockObserverInstance = this as any;
             }
             observe = mockObserve;
             disconnect = mockDisconnect;
             unobserve = vi.fn();
         };
 
-        // Mock requestAnimationFrame
-        vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-            rafCallbacks.push(cb);
-            return rafCallbacks.length - 1;
-        });
+        vi.spyOn(window, "requestAnimationFrame").mockImplementation(
+            (cb: FrameRequestCallback) => {
+                rafCallbacks.push(cb);
+                return rafCallbacks.length - 1;
+            },
+        );
 
         vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
 
-        // Mock matchMedia
         Object.defineProperty(window, "matchMedia", {
             writable: true,
             value: vi.fn().mockImplementation((query) => ({
@@ -52,66 +61,67 @@ describe("useCounter", () => {
     afterEach(() => {
         vi.restoreAllMocks();
         rafCallbacks = [];
+        currentTime = 0;
+        mockObserverInstance = null;
+        intersectionCallback = null;
     });
 
     describe("Inicialización", () => {
         it("inicializa con count en 0", () => {
             const { result } = renderHook(() => useCounter({ end: 100 }));
-
             expect(result.current.count).toBe(0);
         });
 
         it("proporciona una ref", () => {
             const { result } = renderHook(() => useCounter({ end: 100 }));
-
             expect(result.current.ref).toBeDefined();
-            expect(result.current.ref.current).toBeNull();
+            expect(typeof result.current.ref).toBe("function");
         });
 
         it("no inicia el conteo hasta que el elemento sea visible", () => {
             const { result } = renderHook(() => useCounter({ end: 100 }));
-
             expect(result.current.count).toBe(0);
         });
     });
 
     describe("IntersectionObserver", () => {
-        it("observa el elemento cuando ref.current está asignado", () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+        it("observa el elemento cuando ref es llamado", async () => {
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            expect(mockObserve).toHaveBeenCalled();
+            await waitFor(() => {
+                expect(mockObserve).toHaveBeenCalled();
+            });
         });
 
         it("inicia el conteo cuando el elemento entra en el viewport", async () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 500;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](1000);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
@@ -120,41 +130,45 @@ describe("useCounter", () => {
             });
         });
 
-        it("no inicia el conteo si el elemento no es visible", () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+        it("no inicia el conteo si el elemento no es visible", async () => {
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
+            });
 
             act(() => {
-                intersectionCallback([{ isIntersecting: false }]);
+                intersectionCallback!(
+                    [{ isIntersecting: false } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
             });
 
             expect(result.current.count).toBe(0);
         });
 
         it("desconecta el observer después de que el elemento sea visible", async () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
+            });
 
             act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
             });
 
             await waitFor(() => {
@@ -165,33 +179,40 @@ describe("useCounter", () => {
 
     describe("Animación del contador", () => {
         it("incrementa el count progresivamente", async () => {
-            const { result, rerender } = renderHook(() =>
+            const { result } = renderHook(() =>
                 useCounter({ end: 100, duration: 1000 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             expect(result.current.count).toBe(0);
 
             act(() => {
+                currentTime = 500;
                 if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](500);
+                    rafCallbacks[1](currentTime);
                 }
             });
 
@@ -202,31 +223,38 @@ describe("useCounter", () => {
         });
 
         it("llega exactamente al valor end al finalizar", async () => {
-            const { result, rerender } = renderHook(() =>
+            const { result } = renderHook(() =>
                 useCounter({ end: 100, duration: 100 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             act(() => {
+                currentTime = 150;
                 if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](150);
+                    rafCallbacks[1](currentTime);
                 }
             });
 
@@ -238,38 +266,44 @@ describe("useCounter", () => {
             );
         });
 
-        it("usa la duración por defecto de 1500ms", () => {
+        it("usa la duración por defecto de 2000ms", () => {
             const { result } = renderHook(() => useCounter({ end: 100 }));
-
             expect(result.current).toBeDefined();
         });
 
         it("respeta la duración customizada", async () => {
-            const { result, rerender } = renderHook(() =>
+            const { result } = renderHook(() =>
                 useCounter({ end: 50, duration: 200 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             act(() => {
+                currentTime = 250;
                 if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](250);
+                    rafCallbacks[1](currentTime);
                 }
             });
 
@@ -298,20 +332,22 @@ describe("useCounter", () => {
                 })),
             });
 
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
+            });
 
             act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
             });
 
             await waitFor(() => {
@@ -334,31 +370,38 @@ describe("useCounter", () => {
                 })),
             });
 
-            const { result, rerender } = renderHook(() =>
+            const { result } = renderHook(() =>
                 useCounter({ end: 100, duration: 1000 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             act(() => {
+                currentTime = 500;
                 if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](500);
+                    rafCallbacks[1](currentTime);
                 }
             });
 
@@ -371,20 +414,22 @@ describe("useCounter", () => {
 
     describe("Casos edge", () => {
         it("maneja end = 0 correctamente", async () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 0 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 0 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
+            });
 
             act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
             });
 
             await waitFor(() => {
@@ -393,31 +438,38 @@ describe("useCounter", () => {
         });
 
         it("maneja valores decimales de end (los redondea)", async () => {
-            const { result, rerender } = renderHook(() =>
+            const { result } = renderHook(() =>
                 useCounter({ end: 50.7, duration: 100 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             act(() => {
+                currentTime = 150;
                 if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](150);
+                    rafCallbacks[1](currentTime);
                 }
             });
 
@@ -426,27 +478,26 @@ describe("useCounter", () => {
             });
         });
 
-        it("no falla si ref.current es null", () => {
+        it("no falla si ref no se llama", () => {
             const { result } = renderHook(() => useCounter({ end: 100 }));
-
-            expect(result.current.ref.current).toBeNull();
             expect(result.current.count).toBe(0);
         });
     });
 
     describe("Cleanup", () => {
-        it("limpia el observer al desmontar", () => {
-            const { result, rerender, unmount } = renderHook(() =>
+        it("limpia el observer al desmontar", async () => {
+            const { result, unmount } = renderHook(() =>
                 useCounter({ end: 100 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(mockObserve).toHaveBeenCalled();
+            });
 
             unmount();
 
@@ -454,118 +505,119 @@ describe("useCounter", () => {
         });
 
         it("no vuelve a animar si ya fue animado", async () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
-            });
-
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
-            });
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+                result.current.ref(mockElement);
             });
 
             await waitFor(() => {
-                expect(mockDisconnect).toHaveBeenCalled();
+                expect(intersectionCallback).not.toBeNull();
+            });
+
+            act(() => {
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            const disconnectCount = mockDisconnect.mock.calls.length;
+
+            act(() => {
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            await waitFor(() => {
+                expect(mockDisconnect.mock.calls.length).toBe(disconnectCount);
             });
         });
     });
 
     describe("Casos edge adicionales", () => {
-        it("maneja cuando matchMedia no está disponible", () => {
-            // Guardar el original
+        it("maneja cuando matchMedia no está disponible", async () => {
             const originalMatchMedia = window.matchMedia;
-
-            // Eliminar matchMedia
             (window as any).matchMedia = undefined;
 
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
             act(() => {
+                currentTime = 0;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 0;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](0);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
             expect(result.current.count).toBeGreaterThanOrEqual(0);
-
-            // Restaurar
             window.matchMedia = originalMatchMedia;
         });
 
-        it("maneja cuando el entry no está definido en el callback", () => {
-            const { result, rerender } = renderHook(() =>
-                useCounter({ end: 100 }),
-            );
-
+        it("maneja cuando el entry no está definido en el callback", async () => {
+            const { result } = renderHook(() => useCounter({ end: 100 }));
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
+            });
 
-            // Llamar con array vacío
             act(() => {
-                intersectionCallback([]);
+                intersectionCallback!([], mockObserverInstance!);
             });
 
-            // No debería iniciar animación
             expect(result.current.count).toBe(0);
         });
 
-        it("inicializa startTimeRef correctamente en la animación", async () => {
-            const { result, rerender } = renderHook(() =>
+        it("inicializa startTime correctamente con performance.now()", async () => {
+            const { result } = renderHook(() =>
                 useCounter({ end: 50, duration: 100 }),
             );
-
             const mockElement = document.createElement("div");
 
             act(() => {
-                result.current.ref.current = mockElement;
+                result.current.ref(mockElement);
             });
 
-            rerender();
-
-            act(() => {
-                intersectionCallback([{ isIntersecting: true }]);
+            await waitFor(() => {
+                expect(intersectionCallback).not.toBeNull();
             });
 
-            // Primer frame - startTimeRef es null, se setea a 0
             act(() => {
+                currentTime = 100;
+                intersectionCallback!(
+                    [{ isIntersecting: true } as IntersectionObserverEntry],
+                    mockObserverInstance!,
+                );
+            });
+
+            act(() => {
+                currentTime = 150;
                 if (rafCallbacks.length > 0) {
-                    rafCallbacks[0](100);
-                }
-            });
-
-            // Segundo frame - startTimeRef ya tiene valor
-            act(() => {
-                if (rafCallbacks.length > 1) {
-                    rafCallbacks[1](150);
+                    rafCallbacks[0](currentTime);
                 }
             });
 
@@ -575,12 +627,9 @@ describe("useCounter", () => {
         });
     });
 
-    it("no hace nada si ref.current es null", () => {
+    it("no hace nada si ref no se llama", () => {
         const { result } = renderHook(() => useCounter({ end: 100 }));
-
-        // Sin asignar el ref a ningún elemento, count permanece en 0
         expect(result.current.count).toBe(0);
-        expect(result.current.ref.current).toBeNull();
     });
 
     it("cancela animationFrame en cleanup correctamente", () => {
@@ -596,7 +645,6 @@ describe("useCounter", () => {
         vi.advanceTimersByTime(100);
         unmount();
 
-        // No debería lanzar error al avanzar tiempo después de unmount
         expect(() => vi.advanceTimersByTime(1000)).not.toThrow();
 
         vi.runOnlyPendingTimers();
@@ -604,57 +652,62 @@ describe("useCounter", () => {
     });
 
     it("no re-anima si ya animó una vez (hasAnimatedRef)", async () => {
-        const { result, rerender } = renderHook(() =>
+        const { result } = renderHook(() =>
             useCounter({ end: 100, duration: 100 }),
         );
-
         const mockElement = document.createElement("div");
-        act(() => {
-            result.current.ref.current = mockElement;
-        });
-        rerender();
 
-        // Primera vez: entra al viewport y anima
         act(() => {
-            intersectionCallback([{ isIntersecting: true }]);
+            result.current.ref(mockElement);
         });
 
-        // Verificar que hasAnimatedRef se marcó como true y observer se desconectó
+        await waitFor(() => {
+            expect(intersectionCallback).not.toBeNull();
+        });
+
+        act(() => {
+            intersectionCallback!(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                mockObserverInstance!,
+            );
+        });
+
         expect(mockDisconnect).toHaveBeenCalled();
-
-        // Reset del mock para verificar que no se llama de nuevo
         mockDisconnect.mockClear();
 
-        // Intentar re-entrar al viewport (segunda vez)
         act(() => {
-            intersectionCallback([{ isIntersecting: true }]);
+            intersectionCallback!(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                mockObserverInstance!,
+            );
         });
 
-        // NO debería desconectar de nuevo porque hasAnimatedRef.current === true
-        // (línea 22: if (hasAnimatedRef.current) return;)
         expect(mockDisconnect).not.toHaveBeenCalled();
     });
 
-    it("desconecta el observer inmediatamente después de la primera intersección", () => {
-        const { result, rerender } = renderHook(() =>
+    it("desconecta el observer inmediatamente después de la primera intersección", async () => {
+        const { result } = renderHook(() =>
             useCounter({ end: 100, duration: 100 }),
         );
-
         const mockElement = document.createElement("div");
-        act(() => {
-            result.current.ref.current = mockElement;
-        });
-        rerender();
 
-        // Verificar que NO se ha desconectado antes de intersectar
+        act(() => {
+            result.current.ref(mockElement);
+        });
+
+        await waitFor(() => {
+            expect(intersectionCallback).not.toBeNull();
+        });
+
         expect(mockDisconnect).not.toHaveBeenCalled();
 
-        // Primera intersección
         act(() => {
-            intersectionCallback([{ isIntersecting: true }]);
+            intersectionCallback!(
+                [{ isIntersecting: true } as IntersectionObserverEntry],
+                mockObserverInstance!,
+            );
         });
 
-        // Debería desconectar INMEDIATAMENTE (línea 39)
         expect(mockDisconnect).toHaveBeenCalledTimes(1);
     });
 });

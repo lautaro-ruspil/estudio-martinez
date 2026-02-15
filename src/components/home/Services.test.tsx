@@ -1,13 +1,21 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Services } from "../../components/home/Services";
 import { servicesList } from "../../data/services";
 
-// Mock del hook
+// Mock del hook useScrollToSection
 const mockScrollToSection = vi.fn();
 vi.mock("../../hooks/useScrollToSection", () => ({
     useScrollToSection: () => mockScrollToSection,
+}));
+
+// Mock del hook useScrollAnimation
+vi.mock("../../hooks/useScrollAnimation", () => ({
+    useScrollAnimation: () => ({
+        ref: { current: null },
+        isVisible: true, // Simular que es visible para tests
+    }),
 }));
 
 // Mock de los componentes UI
@@ -20,6 +28,13 @@ vi.mock("../../components/ui", () => ({
             {children}
         </button>
     ),
+}));
+
+// Mock de iconSizes
+vi.mock("../../constants/iconSizes", () => ({
+    ICON_SIZES: {
+        lg: "w-7 h-7",
+    },
 }));
 
 describe("Services", () => {
@@ -78,26 +93,26 @@ describe("Services", () => {
 
         listItems.forEach((item, index) => {
             const style = item.getAttribute("style");
-            const expectedDelay = `${index * 40}ms`;
-            expect(style).toContain(`animation-delay: ${expectedDelay}`);
+            // Delay actualizado: 150ms por index
+            const expectedDelay = `${index * 150}ms`;
+            expect(style).toContain(`transition-delay: ${expectedDelay}`);
         });
     });
 
-    it("displays 'Más popular' badge only for popular services", () => {
+    it("displays 'Más popular' badge with emoji only for popular services", () => {
         render(<Services />);
 
         const popularServices = servicesList.filter((s) => s.popular);
-        const nonPopularServices = servicesList.filter((s) => !s.popular);
 
-        // Should have badges for popular services
-        const badges = screen.queryAllByText("Más popular");
+        // Should have badges with emoji for popular services
+        const badges = screen.queryAllByText(/⭐ más popular/i);
         expect(badges).toHaveLength(popularServices.length);
     });
 
     it("popular badge appears only on the first service (monotributo)", () => {
         render(<Services />);
 
-        const badges = screen.queryAllByText("Más popular");
+        const badges = screen.queryAllByText(/⭐ más popular/i);
         expect(badges).toHaveLength(1);
 
         // Verify it's on the monotributo service
@@ -105,7 +120,7 @@ describe("Services", () => {
             .getByText("Monotributo")
             .closest("li");
         const badge = monotributoService?.querySelector(
-            'span[class*="bg-accent-500"]',
+            'span[class*="bg-primary-600"]',
         );
 
         expect(badge).toBeInTheDocument();
@@ -150,14 +165,16 @@ describe("Services", () => {
         expect(mockScrollToSection).toHaveBeenCalledTimes(1);
     });
 
-    it("applies responsive grid classes", () => {
+    it("applies responsive grid classes with updated breakpoints", () => {
         const { container } = render(<Services />);
         const grid = container.querySelector("ul");
 
         expect(grid).toHaveClass("grid");
         expect(grid).toHaveClass("grid-cols-1");
-        expect(grid).toHaveClass("sm:grid-cols-2");
-        expect(grid).toHaveClass("lg:grid-cols-3");
+        // Actualizado: md en lugar de sm
+        expect(grid).toHaveClass("md:grid-cols-2");
+        // Actualizado: xl en lugar de lg
+        expect(grid).toHaveClass("xl:grid-cols-3");
     });
 
     it("each service card has correct heading level", () => {
@@ -178,13 +195,16 @@ describe("Services", () => {
         expect(cards.length).toBeGreaterThanOrEqual(servicesList.length);
     });
 
-    it("popular badge has correct styling classes", () => {
+    it("popular badge has correct updated styling classes", () => {
         const { container } = render(<Services />);
-        const badge = container.querySelector('[class*="bg-accent-500"]');
+        // Badge actualizado: bg-primary-600 en lugar de bg-accent-500
+        const badge = container.querySelector('[class*="bg-primary-600"]');
 
-        expect(badge).toHaveClass("bg-accent-500");
+        expect(badge).toHaveClass("bg-primary-600");
         expect(badge).toHaveClass("text-white");
         expect(badge).toHaveClass("rounded-full");
+        expect(badge).toHaveClass("font-bold");
+        expect(badge).toHaveClass("shadow-strong");
     });
 
     it("icon containers have transition classes", () => {
@@ -230,5 +250,99 @@ describe("Services", () => {
             ).toBeInTheDocument();
             expect(monotributoService.popular).toBe(true);
         }
+    });
+
+    it("ServiceCard component is memoized", () => {
+        const { container } = render(<Services />);
+        const listItems = container.querySelectorAll("li");
+
+        // ServiceCard está memoizado, verificar que se renderizan correctamente
+        expect(listItems).toHaveLength(servicesList.length);
+
+        // Cada card debe tener las clases de transición
+        listItems.forEach((item) => {
+            expect(item).toHaveClass("transition-all");
+            expect(item).toHaveClass("duration-1000");
+        });
+    });
+
+    it("scroll animation is applied to section", () => {
+        const { container } = render(<Services />);
+        const section = container.querySelector("section");
+
+        // Verificar que el section tiene el id correcto para el scroll animation hook
+        expect(section).toHaveAttribute("id", "servicios");
+    });
+
+    it("cards show visible state when isVisible is true", () => {
+        const { container } = render(<Services />);
+        const listItems = container.querySelectorAll("li");
+
+        listItems.forEach((item) => {
+            // Cuando isVisible=true (mock), debe tener clases de visible
+            expect(item).toHaveClass("opacity-100");
+            expect(item).toHaveClass("translate-y-0");
+            expect(item).toHaveClass("scale-100");
+        });
+    });
+
+    it("badge has emoji star", () => {
+        render(<Services />);
+
+        const badgeText = screen.getByText(/⭐ más popular/i);
+        expect(badgeText).toBeInTheDocument();
+        expect(badgeText.textContent).toContain("⭐");
+    });
+
+    it("icon sizes are applied from constants", () => {
+        const { container } = render(<Services />);
+
+        // Los iconos están dentro de divs con bg-primary-50
+        const iconContainers = container.querySelectorAll(".bg-primary-50");
+
+        // Debe haber 6 servicios, cada uno con un icono
+        expect(iconContainers.length).toBeGreaterThan(0);
+
+        // Verificar que cada contenedor tiene un SVG hijo
+        iconContainers.forEach((iconContainer) => {
+            const svg = iconContainer.querySelector("svg");
+            expect(svg).toBeInTheDocument();
+
+            // El SVG debe tener las clases ICON_SIZES.lg (w-7 h-7)
+            // Verificar que tiene ambas clases
+            if (svg) {
+                const classes = svg.getAttribute("class") || "";
+                expect(classes).toMatch(/w-7/);
+                expect(classes).toMatch(/h-7/);
+            }
+        });
+    });
+
+    describe("Animación cuando no es visible", () => {
+        beforeEach(() => {
+            vi.resetModules();
+        });
+
+        it("aplica clases ocultas cuando isVisible es false", async () => {
+            // Mockear hook devolviendo isVisible false
+            vi.doMock("../../hooks/useScrollAnimation", () => ({
+                useScrollAnimation: () => ({
+                    ref: { current: null },
+                    isVisible: false,
+                }),
+            }));
+
+            const { Services: ServicesWithHidden } =
+                await import("../../components/home/Services");
+
+            const { container } = render(<ServicesWithHidden />);
+            const listItems = container.querySelectorAll("li");
+
+            listItems.forEach((item) => {
+                expect(item).toHaveClass("opacity-0");
+                expect(item).toHaveClass("translate-y-16");
+                expect(item).toHaveClass("scale-95");
+            });
+        });
     });
 });
