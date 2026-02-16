@@ -68,21 +68,21 @@ describe("App", () => {
         }
     });
 
-    it("renders without crashing", () => {
+    it("renderiza sin errores", () => {
         render(<App />);
         expect(screen.getByTestId("navbar")).toBeInTheDocument();
     });
 
-    it("renders main container with correct structure", () => {
+    it("renderiza el contenedor principal con la estructura correcta", () => {
         render(<App />);
-        const container = screen.getByRole("main");
 
+        const container = screen.getByRole("main");
         expect(container).toBeInTheDocument();
         expect(container).toHaveAttribute("id", "main-content");
         expect(container).toHaveClass("flex-grow");
     });
 
-    it("renders all main sections in correct order", async () => {
+    it("renderiza todas las secciones principales en el orden correcto", async () => {
         render(<App />);
 
         // Esperar a que los componentes lazy-loaded se carguen
@@ -102,8 +102,9 @@ describe("App", () => {
         expect(sections[5]).toHaveAttribute("data-testid", "contact");
     });
 
-    it("renders Navbar at the top", () => {
+    it("renderiza el Navbar en la parte superior", () => {
         const { container } = render(<App />);
+
         const navbar = screen.getByTestId("navbar");
         const main = screen.getByRole("main");
 
@@ -111,7 +112,7 @@ describe("App", () => {
         expect(navbar.nextSibling).toBe(main);
     });
 
-    it("renders Footer at the bottom", async () => {
+    it("renderiza el Footer en la parte inferior", async () => {
         render(<App />);
 
         // Esperar a que Footer (lazy-loaded) se cargue
@@ -122,16 +123,15 @@ describe("App", () => {
         expect(main.nextSibling).toBe(footer);
     });
 
-    it("renders WhatsAppFloat component", async () => {
+    it("renderiza el componente WhatsAppFloat", async () => {
         render(<App />);
 
         // Esperar a que WhatsAppFloat (lazy-loaded) se cargue
         const whatsapp = await screen.findByTestId("whatsapp-float");
-
         expect(whatsapp).toBeInTheDocument();
     });
 
-    it("applies correct layout classes", () => {
+    it("aplica las clases de layout correctas", () => {
         const { container } = render(<App />);
         const wrapper = container.firstChild as HTMLElement;
 
@@ -140,15 +140,15 @@ describe("App", () => {
         expect(wrapper).toHaveClass("flex-col");
     });
 
-    it("has accessible main landmark", () => {
+    it("tiene un landmark main accesible", () => {
         render(<App />);
-        const main = screen.getByRole("main");
 
+        const main = screen.getByRole("main");
         expect(main).toHaveAttribute("id", "main-content");
     });
 
-    describe("Scroll Restoration", () => {
-        it("sets scrollRestoration to manual on mount", async () => {
+    describe("Restauración del Scroll", () => {
+        it("establece scrollRestoration a manual al montar", async () => {
             render(<App />);
 
             // Esperar a que el useEffect se ejecute
@@ -157,7 +157,7 @@ describe("App", () => {
             });
         });
 
-        it("restores scrollRestoration to auto on unmount", async () => {
+        it("restaura scrollRestoration a auto al desmontar", async () => {
             const { unmount } = render(<App />);
 
             // Esperar a que el useEffect se ejecute
@@ -172,7 +172,7 @@ describe("App", () => {
             expect(window.history.scrollRestoration).toBe("auto");
         });
 
-        it("handles browsers without scrollRestoration support", () => {
+        it("maneja navegadores sin soporte de scrollRestoration", () => {
             // Guardar descriptor original
             const descriptor = Object.getOwnPropertyDescriptor(
                 window.history,
@@ -180,7 +180,7 @@ describe("App", () => {
             );
 
             // Simular navegador sin soporte completamente
-            // @ts-expect-error - Testing browser compatibility
+            // @ts-expect-error - Testeando compatibilidad del navegador
             delete window.history.scrollRestoration;
 
             // No debería lanzar error al renderizar
@@ -199,7 +199,7 @@ describe("App", () => {
             }
         });
 
-        it("handles browsers without scrollRestoration on cleanup", () => {
+        it("maneja navegadores sin scrollRestoration en la limpieza", () => {
             // Guardar descriptor original
             const descriptor = Object.getOwnPropertyDescriptor(
                 window.history,
@@ -209,7 +209,7 @@ describe("App", () => {
             const { unmount } = render(<App />);
 
             // Eliminar scrollRestoration antes del cleanup
-            // @ts-expect-error - Testing browser compatibility
+            // @ts-expect-error - Testeando compatibilidad del navegador
             delete window.history.scrollRestoration;
 
             // No debería lanzar error al desmontar
@@ -227,18 +227,23 @@ describe("App", () => {
     });
 
     describe("Suspense Fallbacks", () => {
-        it("shows loading spinner fallback for main sections", () => {
+        it("tiene una estructura Suspense adecuada para secciones lazy", async () => {
             const { container } = render(<App />);
 
-            // Buscar el spinner de carga (antes de que se carguen los componentes lazy)
-            const spinner = container.querySelector(".animate-spin");
-
-            // El spinner puede o no estar presente dependiendo de qué tan rápido se cargan los componentes
-            // Pero la estructura debería existir
+            // Verificar que main existe desde el inicio
             expect(container.querySelector("main")).toBeInTheDocument();
+
+            // Verificar que eventualmente todos los componentes lazy se cargan
+            await waitFor(() => {
+                expect(screen.getByTestId("services")).toBeInTheDocument();
+                expect(screen.getByTestId("about")).toBeInTheDocument();
+                expect(screen.getByTestId("testimonials")).toBeInTheDocument();
+                expect(screen.getByTestId("faq")).toBeInTheDocument();
+                expect(screen.getByTestId("contact")).toBeInTheDocument();
+            });
         });
 
-        it("renders loading spinner with correct classes", async () => {
+        it("renderiza el spinner de carga con las clases correctas", async () => {
             const { container } = render(<App />);
 
             // Intentar encontrar el spinner si todavía está visible
@@ -259,7 +264,7 @@ describe("App", () => {
             });
         });
 
-        it("renders placeholder for Footer during loading", () => {
+        it("renderiza el placeholder del Footer durante la carga", () => {
             render(<App />);
 
             // El placeholder del Footer es un div de altura fija
@@ -267,7 +272,7 @@ describe("App", () => {
             expect(screen.findByTestId("footer")).resolves.toBeInTheDocument();
         });
 
-        it("renders null fallback for WhatsAppFloat", async () => {
+        it("renderiza fallback null para WhatsAppFloat", async () => {
             render(<App />);
 
             // WhatsAppFloat tiene fallback null, así que no debería haber placeholder visible
@@ -277,22 +282,22 @@ describe("App", () => {
         });
     });
 
-    describe("Component Structure", () => {
-        it("Hero is rendered immediately (not lazy loaded)", () => {
+    describe("Estructura de Componentes", () => {
+        it("Hero se renderiza inmediatamente (no lazy loaded)", () => {
             render(<App />);
 
             // Hero debería estar presente inmediatamente
             expect(screen.getByTestId("hero")).toBeInTheDocument();
         });
 
-        it("Navbar is rendered immediately (not lazy loaded)", () => {
+        it("Navbar se renderiza inmediatamente (no lazy loaded)", () => {
             render(<App />);
 
             // Navbar debería estar presente inmediatamente
             expect(screen.getByTestId("navbar")).toBeInTheDocument();
         });
 
-        it("lazy loaded components eventually render", async () => {
+        it("los componentes lazy loaded eventualmente se renderizan", async () => {
             render(<App />);
 
             // Verificar que todos los componentes lazy se cargan
@@ -309,7 +314,7 @@ describe("App", () => {
             });
         });
 
-        it("maintains correct DOM hierarchy", async () => {
+        it("mantiene la jerarquía DOM correcta", async () => {
             const { container } = render(<App />);
 
             await waitFor(() => {
@@ -336,8 +341,8 @@ describe("App", () => {
         });
     });
 
-    describe("Accessibility", () => {
-        it("has proper landmark structure", async () => {
+    describe("Accesibilidad", () => {
+        it("tiene una estructura de landmarks apropiada", async () => {
             render(<App />);
 
             await waitFor(() => {
@@ -353,7 +358,7 @@ describe("App", () => {
             expect(footer.tagName).toBe("FOOTER");
         });
 
-        it("main content has unique id for skip links", () => {
+        it("el contenido principal tiene un id único para skip links", () => {
             render(<App />);
 
             const main = screen.getByRole("main");
@@ -365,8 +370,8 @@ describe("App", () => {
         });
     });
 
-    describe("Responsive Layout", () => {
-        it("uses flexbox for layout", () => {
+    describe("Layout Responsive", () => {
+        it("usa flexbox para el layout", () => {
             const { container } = render(<App />);
             const root = container.firstChild as HTMLElement;
 
@@ -374,14 +379,14 @@ describe("App", () => {
             expect(root).toHaveClass("flex-col");
         });
 
-        it("main content area grows to fill available space", () => {
+        it("el área de contenido principal crece para llenar el espacio disponible", () => {
             render(<App />);
-            const main = screen.getByRole("main");
 
+            const main = screen.getByRole("main");
             expect(main).toHaveClass("flex-grow");
         });
 
-        it("ensures minimum viewport height", () => {
+        it("asegura la altura mínima del viewport", () => {
             const { container } = render(<App />);
             const root = container.firstChild as HTMLElement;
 
@@ -390,7 +395,7 @@ describe("App", () => {
     });
 
     describe("Lazy Loading", () => {
-        it("all lazy components use Suspense boundaries", async () => {
+        it("todos los componentes lazy usan boundaries de Suspense", async () => {
             const { container } = render(<App />);
 
             // Verificar que hay elementos Suspense (detectados por sus fallbacks o contenido)
@@ -410,7 +415,7 @@ describe("App", () => {
             });
         });
 
-        it("main sections share the same Suspense boundary", async () => {
+        it("las secciones principales comparten el mismo boundary de Suspense", async () => {
             render(<App />);
 
             // Todos los componentes dentro de main deberían cargar juntos
@@ -431,7 +436,7 @@ describe("App", () => {
             });
         });
 
-        it("Footer has separate Suspense boundary", async () => {
+        it("Footer tiene un boundary de Suspense separado", async () => {
             render(<App />);
 
             // Footer puede cargar independientemente de las secciones principales
@@ -439,21 +444,20 @@ describe("App", () => {
             expect(footer).toBeInTheDocument();
         });
 
-        it("WhatsAppFloat has separate Suspense boundary with null fallback", async () => {
-            const { container } = render(<App />);
+        it("WhatsAppFloat tiene un boundary de Suspense separado con fallback null", async () => {
+            render(<App />);
 
             // No debería haber fallback visible para WhatsAppFloat
             // porque su fallback es null
-
             // Pero eventualmente debería cargar
             const whatsapp = await screen.findByTestId("whatsapp-float");
             expect(whatsapp).toBeInTheDocument();
         });
     });
 
-    describe("Integration", () => {
-        it("renders complete page structure", async () => {
-            const { container } = render(<App />);
+    describe("Integración", () => {
+        it("renderiza la estructura completa de la página", async () => {
+            render(<App />);
 
             await waitFor(() => {
                 expect(screen.getByTestId("services")).toBeInTheDocument();
@@ -471,7 +475,7 @@ describe("App", () => {
             expect(screen.getByTestId("whatsapp-float")).toBeInTheDocument();
         });
 
-        it("all components are properly nested in the layout", async () => {
+        it("todos los componentes están correctamente anidados en el layout", async () => {
             const { container } = render(<App />);
 
             await waitFor(() => {

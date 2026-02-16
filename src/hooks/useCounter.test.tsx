@@ -9,7 +9,6 @@ describe("useCounter", () => {
     let intersectionCallback: IntersectionObserverCallback | null;
     let mockObserverInstance: IntersectionObserver | null;
     let rafCallbacks: Array<FrameRequestCallback>;
-    let performanceNowMock: ReturnType<typeof vi.spyOn>;
     let currentTime: number;
 
     beforeEach(() => {
@@ -20,9 +19,7 @@ describe("useCounter", () => {
         mockDisconnect = vi.fn();
         currentTime = 0;
 
-        performanceNowMock = vi
-            .spyOn(performance, "now")
-            .mockImplementation(() => currentTime);
+        vi.spyOn(performance, "now").mockImplementation(() => currentTime);
 
         (globalThis as any).IntersectionObserver = class IntersectionObserver {
             constructor(callback: IntersectionObserverCallback) {

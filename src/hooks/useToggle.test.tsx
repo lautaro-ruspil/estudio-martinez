@@ -445,8 +445,6 @@ describe("useToggle", () => {
                 return useToggle(true);
             });
 
-            const initialRenderCount = renderCount;
-
             act(() => {
                 result.current[2](true); // Ya era true
             });

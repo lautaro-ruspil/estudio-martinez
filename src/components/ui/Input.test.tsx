@@ -111,7 +111,7 @@ describe("Input", () => {
         });
 
         it("muestra ícono de error junto al mensaje", () => {
-            const { container } = render(
+            render(
                 <Input label="Campo" id="field" error="Error de validación" />,
             );
 

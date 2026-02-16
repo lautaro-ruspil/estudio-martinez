@@ -3,7 +3,7 @@
  * Previene console spam en producción y facilita debugging.
  */
 
-type LogLevel = "log" | "warn" | "error" | "info" | "debug";
+export type LogLevel = "log" | "warn" | "error" | "info" | "debug";
 
 class Logger {
     private isDev = import.meta.env.DEV;

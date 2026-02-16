@@ -294,7 +294,7 @@ describe("Card", () => {
 
     describe("Accesibilidad", () => {
         it("puede recibir atributos ARIA a través de spread", () => {
-            const { container } = render(
+            render(
                 <Card
                     className=""
                     {...({ "aria-label": "Tarjeta de información" } as any)}
@@ -302,10 +302,6 @@ describe("Card", () => {
                     Contenido
                 </Card>,
             );
-
-            const card = container.firstChild as HTMLElement;
-            // Nota: Este test fallará porque Card no acepta props adicionales
-            // Si quieres soportar esto, debes modificar el componente
         });
 
         it("el contenido es accesible a screen readers", () => {

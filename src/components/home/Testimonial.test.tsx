@@ -46,7 +46,7 @@ describe("Testimonials", () => {
         testimonials.forEach((testimonial) => {
             // Buscar por texto que incluya el contenido (con o sin comillas)
             expect(
-                screen.getByText((content, element) => {
+                screen.getByText((content) => {
                     return content.includes(testimonial.content);
                 }),
             ).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("Testimonials", () => {
     });
 
     it("testimonial content is wrapped in a blockquote", () => {
-        const { container } = render(<Testimonials />);
+        render(<Testimonials />);
 
         testimonials.forEach((testimonial) => {
             // Buscar el texto dentro del DOM
@@ -102,7 +102,7 @@ describe("Testimonials", () => {
     });
 
     it("renders correct number of stars for each rating", () => {
-        const { container } = render(<Testimonials />);
+        render(<Testimonials />);
 
         testimonials.forEach((testimonial) => {
             const article = screen
@@ -116,7 +116,7 @@ describe("Testimonials", () => {
     });
 
     it("caps rating at 5 stars maximum", () => {
-        const { container } = render(<Testimonials />);
+        render(<Testimonials />);
 
         testimonials.forEach((testimonial) => {
             const article = screen
@@ -129,7 +129,7 @@ describe("Testimonials", () => {
     });
 
     it("renders testimonial author in footer element", () => {
-        const { container } = render(<Testimonials />);
+        render(<Testimonials />);
 
         testimonials.forEach((testimonial) => {
             const name = screen.getByText(testimonial.name);
@@ -181,7 +181,7 @@ describe("Testimonials", () => {
     });
 
     it("testimonial content includes quotes in text", () => {
-        const { container } = render(<Testimonials />);
+        render(<Testimonials />);
 
         testimonials.forEach((testimonial) => {
             // Encontrar el article que contiene este testimonial

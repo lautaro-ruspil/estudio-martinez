@@ -219,7 +219,7 @@ describe("Services", () => {
     });
 
     it("service descriptions have correct text color", () => {
-        const { container } = render(<Services />);
+        render(<Services />);
 
         servicesList.forEach((service) => {
             const description = screen.getByText(service.description);
