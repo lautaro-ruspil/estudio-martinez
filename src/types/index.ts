@@ -1,3 +1,5 @@
+// types/index.ts - VERSIÓN CORREGIDA
+
 import type { LucideIcon } from "lucide-react";
 
 export interface Service {
@@ -5,7 +7,7 @@ export interface Service {
     title: string;
     description: string;
     icon: LucideIcon;
-    popular: boolean;
+    popular?: boolean; // ✅ FIX: Opcional (Problema #14)
 }
 
 export interface FAQItem {
@@ -21,9 +23,5 @@ export interface ContactFormData {
     message: string;
 }
 
-export interface FormErrors {
-    name?: string;
-    email?: string;
-    phone?: string;
-    message?: string;
-}
+// Type helper para errores
+export type ContactFormErrors = Partial<Record<keyof ContactFormData, string>>;

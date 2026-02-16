@@ -1,34 +1,37 @@
 import { useCallback } from "react";
+import { logger } from "../utils/logger";
 
+/**
+ * Hook para scroll suave a secciones, calculando offset del navbar dinámicamente.
+ *
+ * @returns Función para hacer scroll a una sección por ID
+ *
+ * @example
+ * ```tsx
+ * const scrollToSection = useScrollToSection();
+ * <button onClick={() => scrollToSection('contacto')}>Contacto</button>
+ * ```
+ */
 export function useScrollToSection() {
     const scrollToSection = useCallback((sectionId: string) => {
         const element = document.getElementById(sectionId);
-        if (!element) return;
-
-        // Habilitar smooth scroll temporalmente
-        document.documentElement.classList.add("smooth-scroll");
+        if (!element) {
+            logger.warn(`Section with id "${sectionId}" not found`);
+            return;
+        }
 
         // Calcular altura del navbar dinámicamente
-        const navbar = document.querySelector("nav");
+        const navbar = document.querySelector("#main-navbar");
+        const navbarHeight = navbar?.getBoundingClientRect().height ?? 80;
 
-        const navbarHeight = navbar ? navbar.offsetHeight : 80;
-
-        // Agregar padding extra para mobile (mejor UX)
-        const isMobile = window.innerWidth < 768;
-        const extraPadding = isMobile ? 16 : 8;
-
-        const elementPosition =
-            element.getBoundingClientRect().top + window.scrollY;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition =
+            elementPosition + window.pageYOffset - navbarHeight;
 
         window.scrollTo({
-            top: elementPosition - navbarHeight - extraPadding,
+            top: offsetPosition,
             behavior: "smooth",
         });
-
-        // Desactivar smooth scroll después de la animación
-        setTimeout(() => {
-            document.documentElement.classList.remove("smooth-scroll");
-        }, 1000);
     }, []);
 
     return scrollToSection;

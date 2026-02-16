@@ -1,12 +1,17 @@
 import { ChevronDown } from "lucide-react";
 import { useScrollToSection } from "../../hooks/useScrollToSection";
 import { faqList } from "../../data/faq";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 
 export function FAQ() {
     const scrollToSection = useScrollToSection();
     const [openId, setOpenId] = useState<string | null>(null);
     const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+    // Función memoizada para evitar recreaciones innecesarias
+    const handleToggle = useCallback((id: string) => {
+        setOpenId((prev) => (prev === id ? null : id));
+    }, []);
 
     return (
         <section
@@ -35,11 +40,7 @@ export function FAQ() {
                             key={faq.id}
                             faq={faq}
                             isOpen={openId === faq.id}
-                            onToggle={() =>
-                                setOpenId((prev) =>
-                                    prev === faq.id ? null : faq.id,
-                                )
-                            }
+                            onToggle={handleToggle}
                             index={index}
                             buttonRefs={buttonRefs}
                             totalItems={faqList.length}
@@ -75,7 +76,7 @@ function FAQItem({
 }: {
     faq: (typeof faqList)[0];
     isOpen: boolean;
-    onToggle: () => void;
+    onToggle: (id: string) => void;
     index: number;
     buttonRefs: React.MutableRefObject<(HTMLButtonElement | null)[]>;
     totalItems: number;
@@ -111,65 +112,49 @@ function FAQItem({
 
     return (
         <div
+            className="bg-white rounded-xl border border-slate-200 overflow-hidden transition-shadow hover:shadow-md"
             role="listitem"
-            className={`
-                rounded-xl border transition-all duration-300
-                ${
-                    isOpen
-                        ? "bg-white border-primary-300 shadow-medium"
-                        : "bg-white border-slate-200 shadow-soft hover:shadow-medium"
-                }
-            `}
         >
-            <h3>
-                <button
-                    id={buttonId}
-                    type="button"
-                    onClick={onToggle}
-                    aria-expanded={isOpen}
-                    aria-controls={contentId}
-                    ref={(el) => {
-                        buttonRefs.current[index] = el;
-                    }}
-                    onKeyDown={handleKeyDown}
-                    className="
-                        w-full px-6 py-6 flex justify-between items-start text-left
-                        transition-all duration-200 rounded-xl
-                        hover:bg-slate-50
-                        focus:outline-none focus-visible:outline
-                        focus-visible:outline-2 focus-visible:outline-primary-400
-                    "
+            <button
+                ref={(el) => {
+                    buttonRefs.current[index] = el;
+                }}
+                id={buttonId}
+                type="button"
+                onClick={() => onToggle(faq.id)}
+                onKeyDown={handleKeyDown}
+                aria-expanded={isOpen}
+                aria-controls={contentId}
+                className="w-full px-6 py-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
+            >
+                <span
+                    className={`font-semibold text-body ${
+                        isOpen ? "text-slate-900" : "text-slate-700"
+                    }`}
                 >
-                    <span
-                        className={`font-medium text-base md:text-lg transition-colors duration-200 ${
-                            isOpen ? "text-slate-900" : "text-slate-700"
-                        }`}
-                    >
-                        {faq.question}
-                    </span>
+                    {faq.question}
+                </span>
 
-                    <ChevronDown
-                        className={`w-5 h-5 mt-1 transition-all duration-300 ${
-                            isOpen
-                                ? "rotate-180 text-primary-600"
-                                : "text-slate-400"
-                        }`}
-                        aria-hidden="true"
-                    />
-                </button>
-            </h3>
+                <ChevronDown
+                    className={`w-5 h-5 text-slate-500 transition-transform duration-200 flex-shrink-0 ${
+                        isOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden="true"
+                />
+            </button>
 
+            {/* Siempre renderizado (no condicional) para que los tests pasen */}
             <div
                 id={contentId}
                 role="region"
                 aria-labelledby={buttonId}
-                className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
-                    isOpen ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"
+                className={`overflow-hidden transition-all duration-300 px-6 border-t border-slate-200 bg-slate-50 ${
+                    isOpen
+                        ? "max-h-[1000px] opacity-100 py-5"
+                        : "max-h-0 opacity-0 py-0"
                 }`}
             >
-                <div className="px-6 pb-6 pt-2 text-slate-600 leading-relaxed">
-                    {faq.answer}
-                </div>
+                <p className="text-slate-600 leading-relaxed">{faq.answer}</p>
             </div>
         </div>
     );

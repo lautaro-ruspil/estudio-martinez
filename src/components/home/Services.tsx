@@ -1,9 +1,11 @@
+// components/home/Services.tsx - VERSIÓN CORREGIDA
+
 import { servicesList } from "../../data/services";
 import { useScrollToSection } from "../../hooks/useScrollToSection";
 import { useScrollAnimation } from "../../hooks/useScrollAnimation";
 import { Card, Button } from "../ui";
 import { ICON_SIZES } from "../../constants/iconSizes";
-import { memo } from "react";
+// ✅ FIX: Remover memo import (ya no se usa)
 
 interface ServiceCardProps {
     service: (typeof servicesList)[number];
@@ -11,11 +13,8 @@ interface ServiceCardProps {
     isVisible: boolean;
 }
 
-const ServiceCard = memo(function ServiceCard({
-    service,
-    index,
-    isVisible,
-}: ServiceCardProps) {
+// ✅ FIX: Remover memo - no tiene beneficio aquí
+function ServiceCard({ service, index, isVisible }: ServiceCardProps) {
     const Icon = service.icon;
 
     return (
@@ -53,7 +52,7 @@ const ServiceCard = memo(function ServiceCard({
             </Card>
         </li>
     );
-});
+}
 
 export function Services() {
     const scrollToSection = useScrollToSection();

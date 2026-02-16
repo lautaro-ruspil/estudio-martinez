@@ -21,7 +21,7 @@
         <!-- Open Graph -->
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="es_AR" />
-        <meta property="og:url" content="https://estudiomartinez.com.ar" />
+        <meta property="og:url" content="https://martinez-asociados.web.app" />
         <meta
             property="og:title"
             content="Martínez & Asociados - Estudio Contable en Olavarría"
@@ -32,13 +32,16 @@
         />
         <meta
             property="og:image"
-            content="https://estudiomartinez.com.ar/og-image.jpg"
+            content="https://martinez-asociados.web.app/og-image.jpg"
         />
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:locale" content="es_AR" />
-        <meta property="twitter:url" content="https://estudiomartinez.com.ar" />
+        <meta
+            property="twitter:url"
+            content="https://martinez-asociados.web.app"
+        />
         <meta
             property="twitter:title"
             content="Martínez & Asociados - Estudio Contable en Olavarría"
@@ -49,10 +52,10 @@
         />
         <meta
             property="twitter:image"
-            content="https://estudiomartinez.com.ar/og-image.jpg"
+            content="https://martinez-asociados.web.app/og-image.jpg"
         />
 
-        <link rel="canonical" href="https://estudiomartinez.com.ar" />
+        <link rel="canonical" href="https://martinez-asociados.web.app" />
 
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -63,10 +66,72 @@
         <!-- Preconnect -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+        <!-- JSON-LD Structured Data -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "AccountingService",
+                "name": "Martínez & Asociados",
+                "alternateName": "Estudio Contable Martínez",
+                "url": "https://martinez-asociados.web.app",
+                "logo": "https://martinez-asociados.web.app/logo-martinez.svg",
+                "image": "https://martinez-asociados.web.app/og-image.jpg",
+                "description": "Estudio contable con más de 30 años de trayectoria en Olavarría. Servicios contables para monotributistas, empresas y comercios.",
+                "address": {
+                    "@type": "PostalAddress",
+                    "streetAddress": "Av. Rivadavia 2847",
+                    "addressLocality": "Olavarría",
+                    "addressRegion": "Buenos Aires",
+                    "postalCode": "7400",
+                    "addressCountry": "AR"
+                },
+                "geo": {
+                    "@type": "GeoCoordinates",
+                    "latitude": "-36.8927",
+                    "longitude": "-60.3225"
+                },
+                "telephone": "+54-2284-123456",
+                "email": "contacto@estudiomartinez.com.ar",
+                "openingHours": "Mo-Fr 09:00-18:00",
+                "priceRange": "$$",
+                "areaServed": {
+                    "@type": "City",
+                    "name": "Olavarría"
+                },
+                "hasOfferCatalog": {
+                    "@type": "OfferCatalog",
+                    "name": "Servicios Contables",
+                    "itemListElement": [
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Liquidación de Sueldos",
+                                "description": "Servicio integral de liquidación de haberes para monotributistas y empresas"
+                            }
+                        },
+                        {
+                            "@type": "Offer",
+                            "itemOffered": {
+                                "@type": "Service",
+                                "name": "Declaraciones Juradas",
+                                "description": "Presentación de declaraciones juradas mensuales y anuales ante AFIP"
+                            }
+                        }
+                    ]
+                },
+                "founder": {
+                    "@type": "Person",
+                    "name": "Roberto Martínez",
+                    "jobTitle": "Contador Público"
+                }
+            }
+        </script>
     </head>
 
     <body class="antialiased">
-        <!-- Skip Link (accesibilidad real profesional) -->
+        <!-- Skip Link -->
         <a
             href="#main-content"
             class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary-600 text-white px-4 py-2 rounded-md z-50"

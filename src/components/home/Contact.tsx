@@ -66,6 +66,7 @@ export function Contact() {
                                 required
                                 maxLength={80}
                                 autoComplete="name"
+                                disabled={isSubmitting}
                             />
 
                             <Input
@@ -87,6 +88,7 @@ export function Contact() {
                                 required
                                 maxLength={120}
                                 autoComplete="email"
+                                disabled={isSubmitting}
                             />
 
                             <Input
@@ -108,6 +110,7 @@ export function Contact() {
                                 required
                                 maxLength={20}
                                 autoComplete="tel"
+                                disabled={isSubmitting}
                             />
 
                             <Textarea
@@ -130,6 +133,7 @@ export function Contact() {
                                 rows={5}
                                 required
                                 maxLength={1000}
+                                disabled={isSubmitting}
                             />
 
                             <Button

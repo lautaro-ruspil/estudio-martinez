@@ -5,13 +5,7 @@ import { useFocusTrap } from "../../hooks/useFocusTrap";
 import { Button } from "../ui";
 import { BUSINESS_INFO } from "../../config/site";
 import LogoMartinez from "../../assets/logo-martinez.svg";
-
-const NAV_ITEMS = [
-    { id: "servicios", label: "Servicios" },
-    { id: "nosotros", label: "Nosotros" },
-    { id: "testimonials", label: "Testimonios" },
-    { id: "preguntas", label: "Preguntas frecuentes" },
-] as const;
+import { NAV_ITEMS } from "../../constants/navbarItems";
 
 export function Navbar() {
     const [isMenuOpen, toggleMenu, setMenuOpen] = useToggle(false);
@@ -25,6 +19,7 @@ export function Navbar() {
 
     return (
         <nav
+            id="main-navbar"
             className="bg-white/90 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50"
             aria-label="Navegación principal"
         >

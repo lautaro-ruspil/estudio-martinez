@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { MessageCircle } from "lucide-react";
 import { BUSINESS_INFO } from "../../config/site";
 import { ICON_SIZES } from "../../constants/iconSizes";
 import { WhatsAppIcon } from "./WhatsAppIcon";

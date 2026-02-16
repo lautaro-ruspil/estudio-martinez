@@ -307,12 +307,16 @@ describe("Textarea", () => {
             expect(textarea).toBeDisabled();
         });
 
-        it("aplica estilos disabled cuando está deshabilitado", () => {
+        it("aplica estilos visuales correctos cuando está deshabilitado", () => {
             render(<Textarea label="Campo" disabled />);
 
             const textarea = screen.getByLabelText("Campo");
-            expect(textarea).toHaveClass("disabled:bg-slate-100");
-            expect(textarea).toHaveClass("disabled:cursor-not-allowed");
+
+            // Clases reales aplicadas cuando disabled=true
+            expect(textarea).toHaveClass("bg-slate-50");
+            expect(textarea).toHaveClass("cursor-not-allowed");
+            expect(textarea).toHaveClass("opacity-60");
+            expect(textarea).toHaveClass("border-slate-200");
         });
 
         it("soporta readonly", () => {

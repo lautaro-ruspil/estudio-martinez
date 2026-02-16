@@ -1,3 +1,5 @@
+// components/ui/Textarea.tsx - VERSIÓN FINAL
+
 import { forwardRef, type TextareaHTMLAttributes } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 
@@ -18,12 +20,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
         const errorId = `${textareaId}-error`;
         const helpId = `${textareaId}-help`;
+        const validId = `${textareaId}-valid`;
 
         return (
             <div className="space-y-2">
                 <label
                     htmlFor={textareaId}
-                    className="block text-sm font-medium text-slate-700"
+                    className={`block text-sm font-medium ${
+                        props.disabled ? "text-slate-500" : "text-slate-700"
+                    }`}
                 >
                     {label}
                 </label>
@@ -34,11 +39,22 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                         id={textareaId}
                         aria-invalid={!!error}
                         aria-describedby={
-                            error ? errorId : helpText ? helpId : undefined
+                            error
+                                ? errorId
+                                : isValid
+                                  ? validId
+                                  : helpText
+                                    ? helpId
+                                    : undefined
                         }
                         className={`
               w-full px-4 py-3 rounded-xl
-              border bg-white
+              border
+              ${
+                  props.disabled
+                      ? "bg-slate-50 cursor-not-allowed opacity-60 border-slate-200"
+                      : "bg-white"
+              }
               text-slate-900 placeholder:text-slate-400
               resize-none transition-all duration-200
               ${
@@ -47,18 +63,34 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
                       : "border-slate-300 focus:border-primary-500 focus:ring-primary-500"
               }
               focus:outline-none focus:ring-2 focus:ring-offset-0
-              disabled:bg-slate-100 disabled:cursor-not-allowed
+              disabled:focus:ring-0 disabled:focus:border-slate-200
               ${className}
             `}
                         {...props}
                     />
 
-                    {isValid && !error && (
-                        <CheckCircle className="absolute right-3 top-3 w-4 h-4 text-slate-400" />
+                    {/* Validation icons - no mostrar cuando disabled */}
+                    {isValid && !error && !props.disabled && (
+                        <div
+                            className="absolute right-3 top-3"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            <CheckCircle
+                                className="w-4 h-4 text-slate-400"
+                                aria-hidden="true"
+                            />
+                            <span id={validId} className="sr-only">
+                                Campo válido
+                            </span>
+                        </div>
                     )}
 
-                    {error && (
-                        <AlertCircle className="absolute right-3 top-3 w-4 h-4 text-red-500" />
+                    {error && !props.disabled && (
+                        <AlertCircle
+                            className="absolute right-3 top-3 w-4 h-4 text-red-500"
+                            aria-hidden="true"
+                        />
                     )}
                 </div>
 
